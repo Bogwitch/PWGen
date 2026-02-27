@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Password Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .control-group { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="checkbox"] { margin-right: 8px; }
+        input[type="range"] { width: 100%; margin: 5px 0 10px 0; }
+        #password-display { width: 100%; padding: 10px; font-size: 1.2em; text-align: center; border: 2px solid #5cb85c; border-radius: 4px; margin-top: 20px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #5cb85c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1.1em; transition: background-color 0.3s; }
+        button:hover { background-color: #4cae4c; }
+        #length-value { font-weight: bold; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Password Generator</h1>
+
+        <div class="control-group">
+            <label>Password Length: <span id="length-value">16</span></label>
+            <input type="range" id="length" min="15" max="50" value="12" oninput="document.getElementById('length-value').textContent = this.value">
+        </div>
+
+        <div class="control-group">
+            <label>Character Sets:</label>
+            <div><input type="checkbox" id="uppercase" checked> Uppercase (A-Z)</div>
+            <div><input type="checkbox" id="lowercase" checked> Lowercase (a-z)</div>
+            <div><input type="checkbox" id="numbers" checked> Numbers (0-9)</div>
+            <div><input type="checkbox" id="symbols"> Non-alphanumeric (!@#$...)</div>
+        </div>
+
+        <div class="control-group">
+            <label>Options:</label>
+            <div><input type="checkbox" id="avoid-ambiguous" checked> Avoid Ambiguous Characters (I, l, 1, 0, O)</div>
+        </div>
+        
+        <button onclick="generatePassword()">Generate Password</button>
+
+        <input type="text" id="password-display" readonly placeholder="Your new password will appear here">
+    </div>
+
+    <script>
+        // Character sets
+        const charSets = {
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            numbers: '0123456789',
+            symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?/~'
+        };
+
+        // Ambiguous characters to avoid
+        const ambiguous = 'Ili!|0O'; 
+
+        /**
+         * Filters a string to remove specified characters.
+         * @param {string} source - The original character set string.
+         * @param {string} filter - The characters to remove.
+         * @returns {string} The filtered string.
+         */
+        function filterCharacters(source, filter) {
+            let result = '';
+            for (const char of source) {
+                if (!filter.includes(char)) {
+                    result += char;
+                }
+            }
+            return result;
+        }
+
+        function generatePassword() {
+            // Get user selections
+            const length = parseInt(document.getElementById('length').value);
+            const includeUppercase = document.getElementById('uppercase').checked;
+            const includeLowercase = document.getElementById('lowercase').checked;
+            const includeNumbers = document.getElementById('numbers').checked;
+            const includeSymbols = document.getElementById('symbols').checked;
+            const avoidAmbiguous = document.getElementById('avoid-ambiguous').checked;
+
+            let finalCharSet = '';
+            let mandatoryChars = ''; // To ensure at least one char from each selected type is included
+
+            let upper = charSets.uppercase;
+            let lower = charSets.lowercase;
+            let num = charSets.numbers;
+            let sym = charSets.symbols;
+
+            if (avoidAmbiguous) {
+                upper = filterCharacters(upper, ambiguous);
+                lower = filterCharacters(lower, ambiguous);
+                num = filterCharacters(num, ambiguous);
+                // Note: symbols are generally less ambiguous, but you could filter them too if needed.
+            }
+
+            // Build character set and mandatory characters
+            if (includeUppercase && upper.length > 0) {
+                finalCharSet += upper;
+                mandatoryChars += upper.charAt(Math.floor(Math.random() * upper.length));
+            }
+            if (includeLowercase && lower.length > 0) {
+                finalCharSet += lower;
+                mandatoryChars += lower.charAt(Math.floor(Math.random() * lower.length));
+            }
+            if (includeNumbers && num.length > 0) {
+                finalCharSet += num;
+                mandatoryChars += num.charAt(Math.floor(Math.random() * num.length));
+            }
+            if (includeSymbols && sym.length > 0) {
+                finalCharSet += sym;
+                mandatoryChars += sym.charAt(Math.floor(Math.random() * sym.length));
+            }
+
+            if (finalCharSet.length === 0) {
+                document.getElementById('password-display').value = 'Select at least one character type.';
+                return;
+            }
+
+            // The rest of the password characters
+            let password = mandatoryChars;
+            const remainingLength = length - mandatoryChars.length;
+
+            for (let i = 0; i < remainingLength; i++) {
+                const randomIndex = Math.floor(Math.random() * finalCharSet.length);
+                password += finalCharSet.charAt(randomIndex);
+            }
+
+            // Shuffle the password to mix the mandatory characters
+            password = password.split('').sort(() => 0.5 - Math.random()).join('');
+
+            // Display the password
+            document.getElementById('password-display').value = password;
+        }
+
+        // Initialize with a password upon page load
+        document.addEventListener('DOMContentLoaded', generatePassword);
+    </script>
+</body>
+</html>
